@@ -64,7 +64,6 @@
 
 			var makeNode = function makeNode(data) {
 
-				//console.log(data)
 				var isArray = angular.isArray(data);
 				var isObject = angular.isObject(data);
 
@@ -118,21 +117,23 @@
 				select: "=",
 				auto: "=",
 				name: "=",
-				hide: "="
+				hide: "=",
+				selected: "="
 			},
-			template: '\n\t\t\t<div ><span ng-click="clickHandler()">{{name}}<small ng-if="tree.description">\u3010{{tree.description}}\u3011</small></span>\n\t\t\t<input type="checkbox" ng-click="changHandler()"/></div>\n\t\t',
+			template: '\n\t\t\t<div ><span ng-click="clickHandler()">{{name}}<small ng-if="tree.description">\u3010{{tree.description}}\u3011</small></span>\n\t\t\t<input type="checkbox" ng-model="selected"/>{{selected}}--></div>\n\t\t',
 			link: function link(scope, iElement, iAttrs) {
 
 				scope.hasDraw = false;
+
 				scope.create = function (node, node_name) {
 
 					if (!node) return;
-					var newscope = scope.$new();
+					var newscope = scope.$new(false);
 					newscope.tree = JSON.parse(JSON.stringify(node));
 					newscope.auto = false;
 					newscope.name = node_name;
 					scope_list.push(newscope);
-					var str = '<mad-trees data=tree auto=auto name="name" hide="hide"></mad-trees>';
+					var str = '<mad-trees data=tree auto=auto name="name" hide="hide" selected="selected"></mad-trees>';
 					var html = $compile(str)(newscope);
 					$(iElement).append(html);
 				};
@@ -152,12 +153,10 @@
 
 					scope.drawNode(trees.makeNode(scope.tree));
 					scope.hasDraw = true;
-					//scope.fix();
 				};
 				scope.drawNode = function (data) {
 
 					for (var prop in data) {
-
 						scope.create(data[prop], prop);
 					}
 				};
@@ -170,7 +169,6 @@
 						$(iElement).contents().remove();
 
 						for (var i = 0; i < scope_list.length; i++) {
-
 							scope_list.pop().$destory();
 						}
 						scope.drawNode(trees.makeNode(n));
@@ -178,10 +176,7 @@
 				}, true);
 
 				scope.changHandler = function () {
-
 					var g = jp({ path: "$..id", resultType: "parent", json: scope.tree, callback: function callback(data) {} });
-
-					console.log(g);
 				};
 			}
 		};
@@ -37868,7 +37863,7 @@
 /* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var __WEBPACK_AMD_DEFINE_RESULT__;var require;'use strict';
+	var require;var __WEBPACK_AMD_DEFINE_RESULT__;'use strict';
 
 	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 

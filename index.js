@@ -18,7 +18,6 @@ app.provider('trees', function () {
 
 		var makeNode=function(data){
 
-			//console.log(data)
 			var isArray=angular.isArray(data)
 			var isObject=angular.isObject(data)
 
@@ -80,24 +79,26 @@ app.directive('madTrees', function ($compile,trees) {
 			select:"=",
 			auto:"=",
 			name:"=",
-			hide:"="
+			hide:"=",
+			selected:"="
 		},
 		template:`
 			<div ><span ng-click="clickHandler()">{{name}}<small ng-if="tree.description">【{{tree.description}}】</small></span>
-			<input type="checkbox" ng-click="changHandler()"/></div>
+			<input type="checkbox" ng-model="selected"/>{{selected}}--></div>
 		`,
 		link: function (scope, iElement, iAttrs) {
 			
 			scope.hasDraw=false;
+
 			scope.create=function(node,node_name){
 
 				if(!node) return;
-				var newscope=scope.$new();	
+				var newscope=scope.$new(false);	
 					newscope.tree=JSON.parse(JSON.stringify(node))
 					newscope.auto=false
 					newscope.name=node_name;
 					scope_list.push(newscope);
-				var str=`<mad-trees data=tree auto=auto name="name" hide="hide"></mad-trees>`
+				var str=`<mad-trees data=tree auto=auto name="name" hide="hide" selected="selected"></mad-trees>`
 				var html=$compile(str)(newscope);
 				$(iElement).append(html)
 
@@ -121,12 +122,10 @@ app.directive('madTrees', function ($compile,trees) {
 
 				scope.drawNode(trees.makeNode(scope.tree));
 				scope.hasDraw=true;
-				//scope.fix();
 			}
 			scope.drawNode=function(data){
 
 				for(var prop in data){
-
 					scope.create(data[prop],prop)
 				}
 
@@ -142,7 +141,6 @@ app.directive('madTrees', function ($compile,trees) {
 					$(iElement).contents().remove()
 
 					for(var i=0;i<scope_list.length;i++){
-
 						scope_list.pop().$destory();
 					}
 					scope.drawNode(trees.makeNode(n));			
@@ -151,12 +149,7 @@ app.directive('madTrees', function ($compile,trees) {
 			},true)
 
 			scope.changHandler=function(){
-				
-
 				var g=jp({path:"$..id",resultType:"parent",json:scope.tree,callback:function(data){}})
-
-				console.log(g)
-
 			
 			}
 			
