@@ -55,11 +55,15 @@
 	var app = angular.module('app', []);
 
 	app.controller('mainCtrl', function ($scope, $timeout) {
-		$scope.json = window.data;
+		$scope.tree = window.data;
+		$scope.auto = true;
+		$scope.hasDraw = false;
+		//$scope.selected=false;
 	});
 
 	app.provider('trees', function () {
 
+		var treeList = [];
 		this.$get = function () {
 
 			var makeNode = function makeNode(data) {
@@ -102,9 +106,41 @@
 				}
 			};
 
+			var saveData = function saveData(data, status) {
+
+				if (status) {
+					data.map(function (item) {
+						treeList.push(item.id);
+					});
+				} else {
+					data.map(function (item) {
+						treeList = _.without(treeList, item.id);
+					});
+				}
+			};
+
+			var hasTheTreeData = function hasTheTreeData(data) {
+				if (!data) return { status: false };
+
+				var status = [];
+				for (var i = 0; i < data.length; i++) {
+
+					status.push(_.indexOf(treeList, data[i].id) >= 0);
+				}
+
+				var result = _.compact(status);
+
+				var len = result.length;
+
+				var c = { status: len == data.length };
+				return c;
+			};
+
 			return {
 				makeNode: makeNode,
-				makeData: makeData
+				makeData: makeData,
+				saveData: saveData,
+				hasTheTreeData: hasTheTreeData
 			};
 		};
 	});
@@ -112,28 +148,35 @@
 	app.directive('madTrees', function ($compile, trees) {
 		return {
 			restrict: 'ECMA',
-			scope: {
-				tree: "=data",
-				select: "=",
-				auto: "=",
-				name: "=",
-				hide: "=",
-				selected: "="
-			},
-			template: '\n\t\t\t<div ><span ng-click="clickHandler()">{{name}}<small ng-if="tree.description">\u3010{{tree.description}}\u3011</small></span>\n\t\t\t<input type="checkbox" ng-model="selected"/>{{selected}}--></div>\n\t\t',
-			link: function link(scope, iElement, iAttrs) {
-
-				scope.hasDraw = false;
+			/*	scope:{
+	  		tree:"=data",
+	  		select:"=",
+	  		auto:"=",
+	  		name:"=",
+	  		hide:"=",
+	  		selected:"="
+	  	},*/
+			require: "?ngModel",
+			template: '\n\t\t\t<div ><span ng-click="clickHandler()">{{name}}<small ng-if="tree.description">\u3010{{tree.description}}\u3011</small></span>\n\t\t\t<input type="checkbox" ng-checked="selected" ng-click="opHandler()"/>{{selected}}--></div>\n\t\t',
+			controller: function controller($scope) {},
+			link: function link(scope, iElement, iAttrs, ngModel) {
 
 				scope.create = function (node, node_name) {
 
 					if (!node) return;
-					var newscope = scope.$new(false);
+					var newscope = scope.$new();
 					newscope.tree = JSON.parse(JSON.stringify(node));
 					newscope.auto = false;
 					newscope.name = node_name;
-					scope_list.push(newscope);
-					var str = '<mad-trees data=tree auto=auto name="name" hide="hide" selected="selected"></mad-trees>';
+					newscope.hasDraw = false;
+					newscope.jp = jp({ path: "$..id", resultType: "parent", json: newscope.tree, callback: function callback(data) {} });
+
+					newscope.selected = newscope.ds = trees.hasTheTreeData(newscope.jp).status;
+					//newscope.selected=scope.$parent.selected
+					//newscope.selected=true;//trees.hasTheTreeData(newscope.tree);
+
+
+					var str = '<mad-trees></mad-trees>';
 					var html = $compile(str)(newscope);
 					$(iElement).append(html);
 				};
@@ -142,7 +185,6 @@
 					if (scope.hasDraw) {
 						if ($(iElement).hasClass('hide')) {
 
-							console.log(scope.tree);
 							$(iElement).removeClass('hide');
 						} else {
 
@@ -175,9 +217,27 @@
 					}
 				}, true);
 
-				scope.changHandler = function () {
-					var g = jp({ path: "$..id", resultType: "parent", json: scope.tree, callback: function callback(data) {} });
+				scope.opHandler = function () {
+
+					scope.ds = !scope.ds;
+
+					console.log(scope.ds);
+					trees.saveData(scope.jp, scope.ds);
+					scope.$broadcast("checkEventBoradcast");
+					scope.$emit("checkEvent");
 				};
+
+				scope.$on('checkEventBoradcast', function () {
+					console.log(1);
+					scope.selected = trees.hasTheTreeData(scope.jp).status;
+					scope.ds = scope.selected;
+				});
+				scope.$on('checkEvent', function () {
+					console.log(2);
+
+					scope.selected = trees.hasTheTreeData(scope.jp).status;
+					scope.ds = scope.selected;
+				});
 			}
 		};
 	});
